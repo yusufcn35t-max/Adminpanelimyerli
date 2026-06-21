@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+    <meta name="description" content="QR Menü Yönetim Paneli">
+    <meta name="theme-color" content="#000000">
+    
+    <!-- PWA için Meta Etiketleri -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Admin Panel">
+    
+    <!-- Dinamik Manifest (mağaza adı ve logosu ile güncellenecek) -->
+    <link id="manifestLink" rel="manifest" href="data:application/manifest+json,{}">
+    
+    <title>Admin Panel | QR Menü</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: #000000; color: #ffffff; min-height: 100vh; overflow-x: hidden; }
+        .auth-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #000000 0%, #1a0000 100%); padding: 20px; }
+        .auth-card { background: #0c0c0c; border: 2px solid #6b0c1b; border-radius: 48px; padding: 40px 32px; width: 100%; max-width: 400px; text-align: center; }
+        .auth-card h2 { font-size: 1.4rem; margin-bottom: 20px; color: #e6b8bc; }
+        .auth-card input { width: 100%; padding: 14px 18px; background: #1a1a1a; border: 1px solid #3a1a1f; border-radius: 34px; color: white; font-size: 1rem; margin-bottom: 20px; outline: none; text-align: center; letter-spacing: 2px; }
+        .auth-card input:focus { border-color: #6b0c1b; }
+        .auth-card button { width: 100%; background: #6b0c1b; border: none; padding: 14px; border-radius: 34px; color: white; font-weight: 700; font-size: 1rem; cursor: pointer; }
+        .admin-panel { display: none; padding: 20px; max-width: 1600px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 2px solid #6b0c1b; }
+        .store-info-header { text-align: center; flex: 1; }
+        .store-logo-header { max-height: 60px; max-width: 140px; object-fit: contain; background: #0c0c0c; border-radius: 16px; padding: 6px 12px; border: 1px solid #3a1a1f; display: none; margin: 0 auto 8px auto; }
+        .store-name-header { font-size: 1.3rem; font-weight: 700; background: linear-gradient(135deg, #ffffff, #e0aaae); background-clip: text; -webkit-background-clip: text; color: transparent; display: none; }
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        .settings-btn { background: #6b0c1b; border: none; width: 42px; height: 42px; border-radius: 30px; font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; }
+        .dashboard-stats { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+        .stat-card { background: #0e0e0e; border: 1px solid #2a2a2a; border-radius: 20px; padding: 12px 20px; text-align: center; min-width: 120px; }
+        .stat-number { font-size: 1.6rem; font-weight: 800; color: #e6b8bc; }
+        .stat-label { color: #aaa; font-size: 0.7rem; margin-top: 4px; }
+        .quick-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+        .quick-btn { background: #1a1a1a; border: 1px solid #6b0c1b; padding: 12px 24px; border-radius: 34px; color: white; cursor: pointer; font-size: 0.85rem; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+        .quick-btn:hover { background: #6b0c1b; }
+        .tools-bar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; justify-content: space-between; align-items: center; }
+        .search-box { flex: 1; max-width: 280px; padding: 10px 16px; background: #1a1a1a; border: 1px solid #3a1a1f; border-radius: 34px; color: white; }
+        .btn-secondary { background: #2a2a2a; border: 1px solid #6b0c1b; padding: 8px 16px; border-radius: 34px; color: white; cursor: pointer; font-size: 0.85rem; transition: 0.2s; }
+        .btn-secondary:hover { background: #3a3a3a; }
+        .btn-danger { background: #a12233; }
+        .btn-primary { background: #6b0c1b; }
+        .btn-success { background: #1b6b1b; }
+        .btn-success:hover { background: #2a8a2a; }
+        .btn-warning { background: #b8860b; }
+        .btn-warning:hover { background: #d4a017; }
+        .category-tabs-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; padding: 8px 0; border-bottom: 1px solid #1a1a1a; }
+        .category-tab-btn { background: #1a1a1a; border: 1px solid #2a2a2a; color: #aaa; padding: 8px 20px; border-radius: 30px; cursor: pointer; font-size: 0.85rem; transition: 0.2s; }
+        .category-tab-btn.active { background: #6b0c1b; border-color: #6b0c1b; color: white; }
+        .category-tab-btn:hover:not(.active) { background: #2a2a2a; }
+        .category-tab-btn .count { background: rgba(255,255,255,0.1); padding: 1px 8px; border-radius: 20px; font-size: 0.7rem; margin-left: 6px; }
+        .product-list-container { background: #0a0a0a; border-radius: 20px; border: 1px solid #1a1a1a; overflow: hidden; }
+        .product-list-header { display: grid; grid-template-columns: 40px 60px 1fr 100px 60px; padding: 12px 16px; background: #141414; border-bottom: 1px solid #1a1a1a; color: #888; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; align-items: center; }
+        .product-list-header .drag-col { text-align: center; }
+        .product-list-header .img-col { text-align: center; }
+        .product-list-header .name-col { padding-left: 8px; }
+        .product-list-header .price-col { text-align: right; }
+        .product-list-header .actions-col { text-align: center; }
+        .product-list { max-height: 500px; overflow-y: auto; }
+        .product-list::-webkit-scrollbar { width: 6px; }
+        .product-list::-webkit-scrollbar-thumb { background: #6b0c1b; border-radius: 10px; }
+        .product-list::-webkit-scrollbar-track { background: #0a0a0a; }
+        .product-list-item { display: grid; grid-template-columns: 40px 60px 1fr 100px 60px; padding: 8px 16px; border-bottom: 1px solid #141414; align-items: center; transition: 0.2s; cursor: grab; }
+        .product-list-item:hover { background: #141414; }
+        .product-list-item:active { cursor: grabbing; }
+        .product-list-item.dragging { opacity: 0.5; background: #1a1a1a; }
+        .product-list-item .drag-handle { color: #555; text-align: center; font-size: 1.1rem; cursor: grab; }
+        .product-list-item .product-img-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; background: #1a1a1a; border: 1px solid #2a2a2a; }
+        .product-list-item .product-img-thumb[src=""] { display: none; }
+        .product-list-item .product-name-col { padding-left: 8px; font-weight: 500; font-size: 0.85rem; }
+        .product-list-item .product-price-col { text-align: right; font-weight: 600; color: #e6b8bc; }
+        .product-list-item .product-actions-col { display: flex; gap: 6px; justify-content: center; }
+        .product-list-item .product-actions-col button { background: none; border: none; color: #666; cursor: pointer; padding: 4px 8px; border-radius: 16px; font-size: 0.75rem; transition: 0.2s; }
+        .product-list-item .product-actions-col .edit-btn:hover { color: #6b0c1b; background: rgba(107, 12, 27, 0.2); }
+        .product-list-item .product-actions-col .delete-btn:hover { color: #ff4444; background: rgba(255, 68, 68, 0.2); }
+        .empty-products { text-align: center; padding: 40px; color: #555; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.96); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: #0c0c0c; border: 1px solid #6b0c1b; border-radius: 44px; padding: 32px; max-width: 600px; width: 90%; max-height: 85vh; overflow-y: auto; }
+        .modal-content h3 { font-size: 1.5rem; margin-bottom: 20px; border-left: 4px solid #6b0c1b; padding-left: 16px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #aaa; font-size: 0.85rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 16px; background: #1a1a1a; border: 1px solid #3a1a1f; border-radius: 34px; color: white; }
+        .form-group textarea { min-height: 80px; resize: vertical; border-radius: 20px; max-height: 100px; }
+        .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; flex-wrap: wrap; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1a1a1a; border-left: 4px solid #6b0c1b; padding: 12px 24px; border-radius: 40px; z-index: 1100; animation: fadeUp 0.3s ease; }
+        @keyframes fadeUp { from { opacity: 0; bottom: 0; } to { opacity: 1; bottom: 30px; } }
+        .settings-nav { display: flex; gap: 12px; margin-bottom: 28px; border-bottom: 1px solid #2a2a2a; padding-bottom: 16px; flex-wrap: wrap; }
+        .settings-tab { flex: 1; min-width: 80px; background: #1a1a1a; border: 1px solid #6b0c1b; padding: 10px; border-radius: 34px; cursor: pointer; text-align: center; font-weight: 600; font-size: 0.7rem; }
+        .settings-tab.active { background: #6b0c1b; color: white; }
+        .settings-panel { display: none; }
+        .settings-panel.active-panel { display: block; }
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #3a3a3a; transition: .3s; border-radius: 26px; }
+        .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: white; transition: .3s; border-radius: 50%; }
+        input:checked + .toggle-slider { background: #6b0c1b; }
+        input:checked + .toggle-slider:before { transform: translateX(24px); }
+        .category-tag { background: #1c1c1c; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 30px; margin: 4px; font-size: 0.8rem; }
+        .category-tag button { background: none; border: none; color: #ff8888; cursor: pointer; font-size: 1rem; }
+        .closed-badge { background: #a12233; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.6rem; margin-left: 6px; }
+        .category-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #1a1a1a; flex-wrap: wrap; gap: 10px; }
+        .category-item .name { font-weight: 500; min-width: 120px; }
+        .category-item .actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .hours-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #1a1a1a; flex-wrap: wrap; gap: 10px; }
+        .hours-item .day { font-weight: 600; min-width: 80px; }
+        .hours-item .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .time-input { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .time-input input { flex: 1; min-width: 100px; }
+        .multi-select { min-height: 80px; padding: 10px; background: #1a1a1a; border: 1px solid #3a1a1f; border-radius: 20px; color: white; width: 100%; }
+        .multi-select option { padding: 6px 10px; margin: 2px 0; border-radius: 8px; cursor: pointer; }
+        .multi-select option:checked { background: #6b0c1b; }
+        .save-btn { background: #6b0c1b; border: none; padding: 8px 20px; border-radius: 30px; color: white; cursor: pointer; font-size: 0.8rem; transition: 0.2s; }
+        .save-btn:hover { background: #800020; }
+        .image-preview-container { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; align-items: flex-start; }
+        .image-preview-box { background: #111; border-radius: 16px; padding: 12px; border: 1px solid #2a2a2a; text-align: center; flex: 1; min-width: 150px; }
+        .image-preview-box .label { font-size: 0.7rem; color: #888; margin-bottom: 8px; }
+        .image-preview-box .preview-img-container { width: 100%; aspect-ratio: 1/1; max-width: 200px; margin: 0 auto; overflow: hidden; border-radius: 12px; background: #1a1a1a; display: flex; align-items: center; justify-content: center; }
+        .image-preview-box .preview-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-placeholder { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #1a1a1a; color: #444; font-size: 2rem; border-radius: 12px; }
+        .special-image-preview { max-width: 200px; margin: 8px auto; border-radius: 12px; overflow: hidden; border: 1px solid #2a2a2a; }
+        .special-image-preview img { width: 100%; height: auto; display: block; }
+        .pwa-install-banner {
+            display: none;
+            background: linear-gradient(135deg, #1a1a1a, #0a0a0a);
+            border-top: 1px solid #6b0c1b;
+            padding: 12px 16px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #aaa;
+            position: sticky;
+            bottom: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        .pwa-install-banner .pwa-icon { font-size: 1.5rem; margin-right: 8px; }
+
+        @media (max-width: 700px) {
+            .admin-panel { padding: 16px; }
+            .tools-bar { flex-direction: column; align-items: stretch; }
+            .search-box { max-width: 100%; }
+            .product-list-header { grid-template-columns: 30px 40px 1fr 70px 50px; font-size: 0.6rem; }
+            .product-list-item { grid-template-columns: 30px 40px 1fr 70px 50px; padding: 6px 10px; }
+            .product-list-item .product-img-thumb { width: 35px; height: 35px; }
+            .product-list-item .product-name-col { font-size: 0.75rem; }
+            .product-list-item .product-price-col { font-size: 0.75rem; }
+            .category-tabs-container { gap: 6px; }
+            .category-tab-btn { padding: 6px 14px; font-size: 0.75rem; }
+            .image-preview-container { flex-direction: column; }
+            .quick-actions { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="authContainer" class="auth-container">
+    <div class="auth-card">
+        <h2>🔐 Yönetici Paneli</h2>
+        <input type="password" id="authPassword" placeholder="Şifre" autocomplete="off" inputmode="numeric">
+        <button id="authBtn">Giriş Yap</button>
+        <div id="authError" style="color:#ff8888; font-size:0.85rem; margin-top:16px;"></div>
+    </div>
+</div>
+
+<div id="adminPanel" class="admin-panel">
+    <div class="header">
+        <div class="store-info-header">
+            <img id="headerLogo" class="store-logo-header" alt="Logo">
+            <div id="headerStoreName" class="store-name-header"></div>
+        </div>
+        <div class="header-right">
+            <button class="settings-btn" id="settingsBtn">⚙️</button>
+        </div>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card"><div class="stat-number" id="totalProducts">0</div><div class="stat-label">Toplam Ürün</div></div>
+        <div class="stat-card"><div class="stat-number" id="totalCategories">0</div><div class="stat-label">Toplam Kategori</div></div>
+        <div class="stat-card"><div class="stat-number" id="activeCategories">0</div><div class="stat-label">Aktif Kategori</div></div>
+    </div>
+
+    <div class="quick-actions">
+        <button class="quick-btn" onclick="document.getElementById('addProductBtn').click()">➕ Yeni Ürün</button>
+        <button class="quick-btn" onclick="document.getElementById('settingsBtn').click()">⚙️ Ayarlar</button>
+    </div>
+
+    <div class="tools-bar">
+        <input type="text" id="searchInput" class="search-box" placeholder="🔍 Ürün ara...">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button id="addProductBtn" class="btn-secondary btn-primary">+ Ürün Ekle</button>
+        </div>
+    </div>
+
+    <div class="category-tabs-container" id="categoryTabsContainer"></div>
+
+    <div class="product-list-container">
+        <div class="product-list-header">
+            <div class="drag-col">☰</div>
+            <div class="img-col">Görsel</div>
+            <div class="name-col">Ürün Adı</div>
+            <div class="price-col">Fiyat</div>
+            <div class="actions-col">İşlem</div>
+        </div>
+        <div class="product-list" id="productList"></div>
+    </div>
+
+    <!-- PWA Install Banner -->
+    <div class="pwa-install-banner" id="pwaInstallBanner">
+        <span class="pwa-icon">📲</span>
+        <span>Uygulama olarak kullanmak için <strong>Ana Ekrana Ekle</strong></span>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    (function() {
+        const SUPABASE_URL = "https://xyhteshuwejrygejzcft.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_hylNzREIIi97wQAy833Pog_VhUkM_Un";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let products = [], categories = [], categoryStatus = [], dailySpecials = [], storeHours = [];
+        let specialDayImages = [];
+        let storeSettings = { name: "", logoUrl: "" };
+        let socialLinks = { instagram: "", tiktok: "", website: "" };
+        let activeCategory = "Tümü";
+        let searchTerm = "";
+        let logoutTimer = null;
+        let adminPassword = "";
+
+        // ========== PWA MANIFEST GÜNCELLEME ==========
+        function updatePWAmanifest() {
+            const name = storeSettings.name && storeSettings.name.trim() ? storeSettings.name : "Admin Panel";
+            const logoUrl = storeSettings.logoUrl && storeSettings.logoUrl.trim() ? storeSettings.logoUrl : '';
+            
+            const manifest = {
+                name: name + " - Admin Panel",
+                short_name: name,
+                start_url: ".",
+                display: "standalone",
+                background_color: "#000000",
+                theme_color: "#6b0c1b",
+                icons: []
+            };
+            
+            // Logo varsa icon olarak kullan
+            if (logoUrl) {
+                manifest.icons = [
+                    {
+                        src: logoUrl,
+                        sizes: "192x192",
+                        type: "image/png"
+                    },
+                    {
+                        src: logoUrl,
+                        sizes: "512x512",
+                        type: "image/png",
+                        purpose: "any maskable"
+                    }
+                ];
+            } else {
+                // Varsayılan icon
+                manifest.icons = [
+                    {
+                        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236b0c1b'/%3E%3Ctext x='50' y='68' font-size='50' text-anchor='middle' fill='white' font-family='Arial'%3E⚙️%3C/text%3E%3C/svg%3E",
+                        sizes: "192x192",
+                        type: "image/svg+xml"
+                    },
+                    {
+                        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%236b0c1b'/%3E%3Ctext x='256' y='350' font-size='250' text-anchor='middle' fill='white' font-family='Arial'%3E⚙️%3C/text%3E%3C/svg%3E",
+                        sizes: "512x512",
+                        type: "image/svg+xml",
+                        purpose: "any maskable"
+                    }
+                ];
+            }
+            
+            const manifestLink = document.getElementById('manifestLink');
+            if (manifestLink) {
+                manifestLink.href = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest));
+            }
+            
+            // PWA kurulum banner'ı
+            checkPWAInstall();
+        }
+
+        function checkPWAInstall() {
+            const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+            const banner = document.getElementById('pwaInstallBanner');
+            if (banner) {
+                banner.style.display = isStandalone ? 'none' : 'block';
+            }
+        }
+
+        // ========== ŞİFREYİ SQL'DEN AL ==========
+        async function loadAdminPassword() {
+            try {
+                const { data } = await supabase
+                    .from('admin_settings')
+                    .select('setting_value')
+                    .eq('setting_key', 'admin_password')
+                    .single();
+                if (data) {
+                    adminPassword = data.setting_value;
+                } else {
+                    adminPassword = "327465";
+                    await supabase
+                        .from('admin_settings')
+                        .upsert({ setting_key: 'admin_password', setting_value: '327465' });
+                }
+            } catch(e) {
+                adminPassword = "327465";
+            }
+        }
+
+        // ========== OTOMATİK ÇIKIŞ ==========
+        function resetLogoutTimer() {
+            if (logoutTimer) clearTimeout(logoutTimer);
+            logoutTimer = setTimeout(() => {
+                showToast("⏰ 15 dakika işlem yapılmadığı için oturum sonlandırıldı.");
+                localStorage.removeItem('admin_auth');
+                const passInput = document.getElementById('authPassword');
+                if (passInput) passInput.value = '';
+                checkAuth();
+            }, 15 * 60 * 1000);
+        }
+
+        function resetTimerOnActivity() {
+            if (localStorage.getItem('admin_auth') === 'true') {
+                resetLogoutTimer();
+            }
+        }
+        ['click', 'mousemove', 'keydown', 'scroll'].forEach(e => document.addEventListener(e, resetTimerOnActivity));
+
+        function showToast(msg) {
+            let t = document.querySelector('.toast');
+            if(t) t.remove();
+            let toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerText = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function showConfirmModal(title, message, onConfirm) {
+            let modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3>${title}</h3>
+                    <p>${message}</p>
+                    <div class="modal-buttons">
+                        <button id="cancelBtn" style="background:#2a2a2a; padding:10px 20px; border-radius:30px; border:none; color:white; cursor:pointer;">İptal</button>
+                        <button id="okBtn" style="background:#a12233; padding:10px 20px; border-radius:30px; border:none; color:white; cursor:pointer;">Evet</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('cancelBtn').onclick = () => modal.remove();
+            document.getElementById('okBtn').onclick = () => { modal.remove(); onConfirm(); };
+        }
+
+        function showPromptModal(title, placeholder, onConfirm) {
+            let modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3>${title}</h3>
+                    <div class="form-group"><input type="text" id="promptInput" placeholder="${placeholder}" style="width:100%;"></div>
+                    <div class="modal-buttons">
+                        <button id="cancelBtn" style="background:#2a2a2a; padding:10px 20px; border-radius:30px;">İptal</button>
+                        <button id="okBtn" style="background:#6b0c1b; padding:10px 20px; border-radius:30px;">Tamam</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('cancelBtn').onclick = () => modal.remove();
+            document.getElementById('okBtn').onclick = () => {
+                let val = document.getElementById('promptInput').value.trim();
+                modal.remove();
+                if(val) onConfirm(val);
+                else showToast("Bu alan boş bırakılamaz");
+            };
+        }
+
+        // ========== SOSYAL LİNKLER ==========
+        async function loadSocialLinks() {
+            try {
+                const { data } = await supabase.from('social_links').select('*');
+                if (data) {
+                    socialLinks = { instagram: "", tiktok: "", website: "" };
+                    data.forEach(item => {
+                        if (item.platform === 'instagram') socialLinks.instagram = item.url || '';
+                        if (item.platform === 'tiktok') socialLinks.tiktok = item.url || '';
+                        if (item.platform === 'website') socialLinks.website = item.url || '';
+                    });
+                }
+            } catch(e) {}
+        }
+
+        async function saveSocialLink(platform, url) {
+            try {
+                const { data: existing } = await supabase.from('social_links').select('id').eq('platform', platform).maybeSingle();
+                let error;
+                if (existing) {
+                    const { error: updateError } = await supabase.from('social_links').update({ url: url, updated_at: new Date() }).eq('platform', platform);
+                    error = updateError;
+                } else {
+                    const { error: insertError } = await supabase.from('social_links').insert([{ platform: platform, url: url, updated_at: new Date() }]);
+                    error = insertError;
+                }
+                if (error) throw error;
+                socialLinks[platform] = url;
+                showToast(`✅ ${platform} kaydedildi`);
+            } catch(e) { showToast("❌ Kaydedilemedi: " + e.message); }
+        }
+
+        // ========== ÖZEL GÜN GÖRSELLERİ ==========
+        async function loadSpecialDayImages() {
+            try {
+                const { data } = await supabase.from('special_day_images').select('*');
+                specialDayImages = data || [];
+            } catch(e) {}
+        }
+
+        async function saveSpecialDayImage(imageUrl) {
+            try {
+                const { data: existing } = await supabase.from('special_day_images').select('id').maybeSingle();
+                let error;
+                if (existing) {
+                    const { error: updateError } = await supabase.from('special_day_images').update({ 
+                        image_url: imageUrl, 
+                        day_of_week: 0,
+                        updated_at: new Date() 
+                    }).eq('id', existing.id);
+                    error = updateError;
+                } else {
+                    const { error: insertError } = await supabase.from('special_day_images').insert([{ 
+                        day_of_week: 0, 
+                        image_url: imageUrl, 
+                        updated_at: new Date() 
+                    }]);
+                    error = insertError;
+                }
+                if (error) throw error;
+                await loadSpecialDayImages();
+                showToast(`✅ Özel gün görseli kaydedildi`);
+            } catch(e) { showToast("❌ Kaydedilemedi: " + e.message); }
+        }
+
+        async function deleteSpecialDayImage() {
+            try {
+                await supabase.from('special_day_images').delete().neq('id', 0);
+                await loadSpecialDayImages();
+                showToast(`✅ Özel gün görseli silindi`);
+            } catch(e) { showToast("❌ Silinemedi: " + e.message); }
+        }
+
+        // ========== VERİ YÜKLEME ==========
+        async function loadStoreSettings() {
+            try {
+                const { data } = await supabase.from('store_settings').select('*').eq('id', 1).single();
+                if (data) { 
+                    storeSettings.name = data.store_name || ''; 
+                    storeSettings.logoUrl = data.logo_url || ''; 
+                }
+                updateUI();
+                updatePWAmanifest();
+            } catch(e) {}
+        }
+
+        async function saveStoreSettings() {
+            try {
+                await supabase.from('store_settings').upsert({ id: 1, store_name: storeSettings.name, logo_url: storeSettings.logoUrl, updated_at: new Date() });
+                showToast("✅ Mağaza ayarları kaydedildi");
+                updatePWAmanifest();
+            } catch(e) { showToast("❌ Kaydedilemedi"); }
+        }
+
+        async function loadCategories() {
+            try {
+                const { data } = await supabase.from('categories').select('*').order('name');
+                categories = data ? data.map(c => c.name) : [];
+                document.getElementById('totalCategories').innerText = categories.length;
+                await loadCategoryStatus();
+                renderCategoryTabs();
+            } catch(e) {}
+        }
+
+        async function loadCategoryStatus() {
+            try {
+                const { data } = await supabase.from('category_status').select('*');
+                categoryStatus = data || [];
+                let activeCount = categoryStatus.filter(s => s.is_active && !s.is_closed_today).length;
+                document.getElementById('activeCategories').innerText = activeCount;
+            } catch(e) {}
+        }
+
+        async function addCategory(name) {
+            try {
+                await supabase.from('categories').insert({ name });
+                await supabase.from('category_status').insert({ category_name: name, is_active: true, is_closed_today: false });
+                await loadCategories();
+                showToast(`✅ "${name}" kategorisi eklendi`);
+            } catch(e) { showToast("❌ Eklenemedi: " + e.message); }
+        }
+
+        async function deleteCategory(name) {
+            try {
+                await supabase.from('categories').delete().eq('name', name);
+                await supabase.from('category_status').delete().eq('category_name', name);
+                await loadCategories();
+                showToast(`✅ "${name}" silindi`);
+            } catch(e) { showToast("❌ Silinemedi"); }
+        }
+
+        async function updateCategoryStatus(name, isActive) {
+            try {
+                const { data: existing } = await supabase.from('category_status').select('id').eq('category_name', name).maybeSingle();
+                let error;
+                if (existing) {
+                    const { error: updateError } = await supabase.from('category_status').update({ category_name: name, is_active: isActive, updated_at: new Date() }).eq('category_name', name);
+                    error = updateError;
+                } else {
+                    const { error: insertError } = await supabase.from('category_status').insert([{ category_name: name, is_active: isActive, updated_at: new Date() }]);
+                    error = insertError;
+                }
+                if (error) throw error;
+                await loadCategoryStatus();
+                showToast(`${isActive ? '✅' : '⛔'} "${name}" ${isActive ? 'açıldı' : 'kapatıldı'}`);
+            } catch(e) { showToast("❌ Güncellenemedi: " + e.message); }
+        }
+
+        async function closeCategoryToday(name) {
+            try {
+                const { data: existing } = await supabase.from('category_status').select('id').eq('category_name', name).maybeSingle();
+                let error;
+                if (existing) {
+                    const { error: updateError } = await supabase.from('category_status').update({ category_name: name, is_closed_today: true, updated_at: new Date() }).eq('category_name', name);
+                    error = updateError;
+                } else {
+                    const { error: insertError } = await supabase.from('category_status').insert([{ category_name: name, is_closed_today: true, updated_at: new Date() }]);
+                    error = insertError;
+                }
+                if (error) throw error;
+                await loadCategoryStatus();
+                showToast(`📅 "${name}" bugünlük kapatıldı`);
+            } catch(e) { showToast("❌ Güncellenemedi: " + e.message); }
+        }
+
+        async function openCategoryToday(name) {
+            try {
+                const { data: existing } = await supabase.from('category_status').select('id').eq('category_name', name).maybeSingle();
+                let error;
+                if (existing) {
+                    const { error: updateError } = await supabase.from('category_status').update({ category_name: name, is_closed_today: false, updated_at: new Date() }).eq('category_name', name);
+                    error = updateError;
+                } else {
+                    const { error: insertError } = await supabase.from('category_status').insert([{ category_name: name, is_closed_today: false, updated_at: new Date() }]);
+                    error = insertError;
+                }
+                if (error) throw error;
+                await loadCategoryStatus();
+                showToast(`✅ "${name}" bugün açıldı`);
+            } catch(e) { showToast("❌ Güncellenemedi: " + e.message); }
+        }
+
+        function renderCategoryTabs() {
+            const container = document.getElementById('categoryTabsContainer');
+            const allCats = ["Tümü", ...categories];
+            
+            container.innerHTML = allCats.map(cat => {
+                let count = products.filter(p => cat === "Tümü" ? true : p.category === cat).length;
+                return `<button class="category-tab-btn ${activeCategory === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}">
+                    ${escapeHtml(cat)} <span class="count">${count}</span>
+                </button>`;
+            }).join('');
+
+            document.querySelectorAll('.category-tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    activeCategory = btn.dataset.category;
+                    renderCategoryTabs();
+                    filterAndRenderProducts();
+                });
+            });
+        }
+
+        async function loadStoreHours() {
+            try {
+                const { data } = await supabase.from('store_hours').select('*').order('day_of_week');
+                storeHours = data || [];
+            } catch(e) { showToast("❌ Yüklenemedi: " + e.message); }
+        }
+
+        async function saveStoreHours(day, openTime, closeTime, isClosed) {
+            try {
+                const { data: existing } = await supabase.from('store_hours').select('id').eq('day_of_week', day).maybeSingle();
+                const updateData = { day_of_week: day, open_time: isClosed ? null : (openTime || null), close_time: isClosed ? null : (closeTime || null), is_closed: isClosed, updated_at: new Date() };
+                let error;
+                if (existing) {
+                    const { error: updateError } = await supabase.from('store_hours').update(updateData).eq('day_of_week', day);
+                    error = updateError;
+                } else {
+                    const { error: insertError } = await supabase.from('store_hours').insert([updateData]);
+                    error = insertError;
+                }
+                if (error) throw error;
+                await loadStoreHours();
+                showToast(`✅ ${getDayName(day)} çalışma saatleri kaydedildi`);
+            } catch(e) { showToast("❌ Kaydedilemedi: " + e.message); }
+        }
+
+        function getDayName(day) {
+            const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+            return days[day] || day;
+        }
+
+        async function loadProducts() {
+            try {
+                const { data } = await supabase.from('products').select('*').order('sort_order', { ascending: true });
+                products = data || [];
+                document.getElementById('totalProducts').innerText = products.length;
+                renderCategoryTabs();
+                filterAndRenderProducts();
+            } catch(e) { showToast("❌ Ürünler yüklenemedi"); }
+        }
+
+        async function addProductToDB(product) {
+            try {
+                const maxOrder = products.length > 0 ? Math.max(...products.map(p => p.sort_order || 0)) : 0;
+                await supabase.from('products').insert([{ ...product, sort_order: maxOrder + 1 }]);
+                await loadProducts();
+                showToast("✅ Ürün eklendi");
+            } catch(e) { showToast("❌ Eklenemedi: " + e.message); }
+        }
+
+        async function updateProductInDB(id, updates) {
+            try {
+                await supabase.from('products').update(updates).eq('id', id);
+                await loadProducts();
+                showToast("✅ Ürün güncellendi");
+            } catch(e) { showToast("❌ Güncellenemedi: " + e.message); }
+        }
+
+        async function deleteProductFromDB(id) {
+            try {
+                await supabase.from('products').delete().eq('id', id);
+                await loadProducts();
+                showToast("✅ Ürün silindi");
+            } catch(e) { showToast("❌ Silinemedi: " + e.message); }
+        }
+
+        async function updateProductSortOrder(productId, newOrder) {
+            try {
+                await supabase.from('products').update({ sort_order: newOrder }).eq('id', productId);
+            } catch(e) { showToast("❌ Sıralama güncellenemedi"); }
+        }
+
+        function filterAndRenderProducts() {
+            let filtered = [...products];
+            if (activeCategory !== "Tümü") {
+                filtered = filtered.filter(p => p.category === activeCategory);
+            }
+            if (searchTerm) {
+                filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm));
+            }
+            renderProductList(filtered);
+        }
+
+        function renderProductList(filteredProducts) {
+            const container = document.getElementById('productList');
+            if (!filteredProducts.length) {
+                container.innerHTML = '<div class="empty-products">📭 Bu kategoride ürün bulunamadı</div>';
+                return;
+            }
+            container.innerHTML = filteredProducts.map((p, index) => `
+                <div class="product-list-item" draggable="true" data-id="${p.id}" data-index="${index}">
+                    <div class="drag-handle">☰</div>
+                    <div class="img-col">
+                        ${p.image_url ? `<img class="product-img-thumb" src="${escapeHtml(p.image_url)}" onerror="this.style.display='none'">` : ''}
+                    </div>
+                    <div class="product-name-col">${escapeHtml(p.name)}</div>
+                    <div class="product-price-col">${p.price} ₺</div>
+                    <div class="product-actions-col">
+                        <button class="edit-btn" onclick="window.editProduct(${p.id})">✏️</button>
+                        <button class="delete-btn" onclick="window.deleteProduct(${p.id})">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+
+            const items = container.querySelectorAll('.product-list-item');
+            let dragStartIndex = null;
+
+            items.forEach((item, idx) => {
+                item.addEventListener('dragstart', (e) => {
+                    dragStartIndex = parseInt(item.dataset.index);
+                    item.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', item.dataset.id);
+                });
+                item.addEventListener('dragend', () => { item.classList.remove('dragging'); });
+                item.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+                item.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    const dragId = parseInt(e.dataTransfer.getData('text/plain'));
+                    const dropIndex = parseInt(item.dataset.index);
+                    if (dragStartIndex === null || dragStartIndex === dropIndex) return;
+                    const filtered = activeCategory === "Tümü" ? products : products.filter(p => p.category === activeCategory);
+                    const dragProduct = filtered.find(p => p.id === dragId);
+                    const dropProduct = filtered[dropIndex];
+                    if (!dragProduct || !dropProduct) return;
+                    const allFiltered = activeCategory === "Tümü" ? products : products.filter(p => p.category === activeCategory);
+                    const newOrder = allFiltered.map((p, i) => ({ id: p.id, sort_order: i }));
+                    const dragOrder = newOrder.find(o => o.id === dragId);
+                    const dropOrder = newOrder.find(o => o.id === dropProduct.id);
+                    if (dragOrder && dropOrder) {
+                        const temp = dragOrder.sort_order;
+                        dragOrder.sort_order = dropOrder.sort_order;
+                        dropOrder.sort_order = temp;
+                    }
+                    for (let item of newOrder) {
+                        await updateProductSortOrder(item.id, item.sort_order);
+                    }
+                    await loadProducts();
+                    dragStartIndex = null;
+                });
+            });
+        }
+
+        // ========== ÜRÜN EKLEME/DÜZENLEME MODALI ==========
+        window.editProduct = (id) => {
+            let product = products.find(p => p.id === id);
+            if (!product) return;
+            openProductModal(product);
+        };
+
+        window.deleteProduct = (id) => {
+            let product = products.find(p => p.id === id);
+            if (!product) return;
+            showConfirmModal("🗑️ Ürün Silme", `"${product.name}" ürününü silmek istediğinize emin misiniz?`, async () => {
+                await deleteProductFromDB(id);
+            });
+        };
+
+        function openProductModal(product = null) {
+            const isEdit = !!product;
+            let modal = document.createElement('div');
+            modal.className = 'modal';
+            
+            let catOptions = '<option value="">Kategori Seçin</option>';
+            categories.forEach(c => {
+                const selected = isEdit && product.category === c ? 'selected' : '';
+                catOptions += `<option value="${escapeHtml(c)}" ${selected}>${escapeHtml(c)}</option>`;
+            });
+            
+            const name = isEdit ? escapeHtml(product.name) : '';
+            const desc = isEdit ? escapeHtml(product.description || '') : '';
+            const price = isEdit ? product.price : '';
+            const image = isEdit ? escapeHtml(product.image_url || '') : '';
+            
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3>${isEdit ? '✏️ Ürün Düzenle' : '➕ Yeni Ürün Ekle'}</h3>
+                    <div class="form-group">
+                        <label>Ürün Adı</label>
+                        <input id="prodName" value="${name}">
+                    </div>
+                    <div class="form-group">
+                        <label>Açıklama</label>
+                        <textarea id="prodDescription" rows="3">${desc}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Fiyat (₺)</label>
+                        <input id="prodPrice" type="number" step="0.01" value="${price}">
+                    </div>
+                    <div class="form-group">
+                        <label>Kategori</label>
+                        <select id="prodCategory">
+                            ${catOptions}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Görsel URL</label>
+                        <input id="prodImage" value="${image}" placeholder="https://...">
+                    </div>
+                    
+                    <div class="image-preview-container">
+                        <div class="image-preview-box">
+                            <div class="label">🖼️ Görsel Önizleme</div>
+                            <div class="preview-img-container" id="imagePreviewBox">
+                                ${image ? `<img src="${image}" id="previewImg" onerror="this.parentElement.innerHTML='<div class=\\'preview-placeholder\\'>❌</div>'">` : '<div class="preview-placeholder">🖼️</div>'}
+                            </div>
+                        </div>
+                        <div class="image-preview-box">
+                            <div class="label">📱 Kart Önizlemesi</div>
+                            <div class="preview-card" style="background:#0e0e0e; border-radius:16px; overflow:hidden; max-width:180px; margin:0 auto; border:1px solid #2a2a2a;">
+                                <div id="cardPreviewImg" class="preview-img" style="width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;background:#1a1a1a;color:#444;font-size:2rem;overflow:hidden;">
+                                    ${image ? `<img src="${image}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='🍽️'">` : '🍽️'}
+                                </div>
+                                <div class="preview-info" style="padding:8px 10px;text-align:left;">
+                                    <div class="preview-name" id="cardPreviewName" style="font-size:0.7rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name || 'Ürün Adı'}</div>
+                                    <div class="preview-desc" id="cardPreviewDesc" style="font-size:0.6rem;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${desc || 'Açıklama'}</div>
+                                    <div class="preview-price" id="cardPreviewPrice" style="font-size:0.8rem;font-weight:700;color:#e6b8bc;">${price ? price + ' ₺' : '0.00 ₺'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-buttons">
+                        <button id="cancelBtn" style="background:#2a2a2a; padding:10px 20px; border-radius:30px; border:none; color:white; cursor:pointer;">İptal</button>
+                        <button id="saveBtn" style="background:#6b0c1b; padding:10px 20px; border-radius:30px; border:none; color:white; cursor:pointer;">${isEdit ? 'Güncelle' : 'Kaydet'}</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            const nameInput = modal.querySelector('#prodName');
+            const descInput = modal.querySelector('#prodDescription');
+            const priceInput = modal.querySelector('#prodPrice');
+            const imageInput = modal.querySelector('#prodImage');
+            
+            const previewBox = modal.querySelector('#imagePreviewBox');
+            const cardPreviewImg = modal.querySelector('#cardPreviewImg');
+            const cardPreviewName = modal.querySelector('#cardPreviewName');
+            const cardPreviewDesc = modal.querySelector('#cardPreviewDesc');
+            const cardPreviewPrice = modal.querySelector('#cardPreviewPrice');
+            
+            function updatePreviews() {
+                const name = nameInput.value || 'Ürün Adı';
+                const desc = descInput.value || 'Açıklama';
+                const price = priceInput.value || '0.00';
+                const imageUrl = imageInput.value.trim();
+                
+                cardPreviewName.textContent = name;
+                cardPreviewDesc.textContent = desc;
+                cardPreviewPrice.textContent = price + ' ₺';
+                
+                if (imageUrl) {
+                    const img = document.createElement('img');
+                    img.src = imageUrl;
+                    img.onload = function() {
+                        previewBox.innerHTML = '';
+                        const newImg = document.createElement('img');
+                        newImg.src = imageUrl;
+                        newImg.style.width = '100%';
+                        newImg.style.height = '100%';
+                        newImg.style.objectFit = 'cover';
+                        previewBox.appendChild(newImg);
+                    };
+                    img.onerror = function() {
+                        previewBox.innerHTML = '<div class="preview-placeholder">❌</div>';
+                    };
+                    
+                    const cardImg = document.createElement('img');
+                    cardImg.src = imageUrl;
+                    cardImg.style.width = '100%';
+                    cardImg.style.height = '100%';
+                    cardImg.style.objectFit = 'cover';
+                    cardPreviewImg.innerHTML = '';
+                    cardPreviewImg.appendChild(cardImg);
+                    cardPreviewImg.style.display = 'block';
+                    cardPreviewImg.style.background = '#1a1a1a';
+                } else {
+                    previewBox.innerHTML = '<div class="preview-placeholder">🖼️</div>';
+                    cardPreviewImg.innerHTML = '🍽️';
+                    cardPreviewImg.style.display = 'flex';
+                    cardPreviewImg.style.alignItems = 'center';
+                    cardPreviewImg.style.justifyContent = 'center';
+                    cardPreviewImg.style.background = '#1a1a1a';
+                    cardPreviewImg.style.color = '#444';
+                    cardPreviewImg.style.fontSize = '2rem';
+                }
+            }
+            
+            nameInput.addEventListener('input', updatePreviews);
+            descInput.addEventListener('input', updatePreviews);
+            priceInput.addEventListener('input', updatePreviews);
+            imageInput.addEventListener('input', updatePreviews);
+            setTimeout(updatePreviews, 100);
+            
+            document.getElementById('cancelBtn').onclick = () => modal.remove();
+            document.getElementById('saveBtn').onclick = async () => {
+                const name = document.getElementById('prodName').value.trim();
+                const description = document.getElementById('prodDescription').value.trim();
+                const price = parseFloat(document.getElementById('prodPrice').value);
+                const category = document.getElementById('prodCategory').value;
+                const image_url = document.getElementById('prodImage').value.trim();
+                
+                if (!name) { showToast("Ürün adı gerekli"); return; }
+                if (isNaN(price) || price <= 0) { showToast("Geçerli fiyat girin"); return; }
+                if (!category) { showToast("Kategori seçin"); return; }
+                
+                if (isEdit) {
+                    await updateProductInDB(product.id, { name, description, price, category, image_url });
+                } else {
+                    await addProductToDB({ name, description, price, category, image_url, created_at: new Date() });
+                }
+                modal.remove();
+            };
+        }
+
+        document.getElementById('addProductBtn').onclick = () => {
+            if (categories.length === 0) { showToast("⚠️ Önce ayarlardan kategori ekleyin!"); return; }
+            openProductModal(null);
+        };
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchTerm = e.target.value.toLowerCase();
+            filterAndRenderProducts();
+        });
+
+        function updateUI() {
+            const headerLogo = document.getElementById('headerLogo');
+            const headerName = document.getElementById('headerStoreName');
+            if (storeSettings.logoUrl && storeSettings.logoUrl.trim()) {
+                headerLogo.src = storeSettings.logoUrl;
+                headerLogo.style.display = 'block';
+            }
+            if (storeSettings.name && storeSettings.name.trim()) {
+                headerName.innerText = storeSettings.name;
+                headerName.style.display = 'block';
+            }
+        }
+
+        function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[m]); }
+
+        // ========== AYARLAR MODALI ==========
+        function openSettingsModal() {
+            let modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3>⚙️ Ayarlar</h3>
+                    <div class="settings-nav">
+                        <div class="settings-tab" data-tab="store">🏪 Mağaza</div>
+                        <div class="settings-tab" data-tab="social">🔗 Sosyal</div>
+                        <div class="settings-tab" data-tab="category">📂 Kategoriler</div>
+                        <div class="settings-tab" data-tab="daily">📅 Özel Günler</div>
+                        <div class="settings-tab" data-tab="special">🎨 Özel Gün Görseli</div>
+                        <div class="settings-tab" data-tab="hours">⏰ Çalışma Saatleri</div>
+                        <div class="settings-tab" data-tab="logout">🚪 Çıkış</div>
+                    </div>
+
+                    <div id="storePanel" class="settings-panel">
+                        <div class="form-group"><label>Mağaza Adı</label><input id="storeNameInput" value="${escapeHtml(storeSettings.name)}"></div>
+                        <div class="form-group"><label>Logo URL</label><input id="logoUrlInput" value="${escapeHtml(storeSettings.logoUrl)}"></div>
+                        <button id="saveStoreBtn" class="save-btn" style="width:100%;">💾 Mağaza Ayarlarını Kaydet</button>
+                        <div style="margin-top:20px;"><button id="changePassBtn" class="btn-secondary" style="width:100%;">🔑 Şifre Değiştir</button></div>
+                    </div>
+
+                    <div id="socialPanel" class="settings-panel">
+                        <div class="form-group"><label>📷 Instagram Linki</label><input id="instagramLink" value="${escapeHtml(socialLinks.instagram)}"></div>
+                        <button id="saveInstagramBtn" class="save-btn" style="width:100%; margin-bottom:12px;">💾 Instagram Kaydet</button>
+                        <div class="form-group"><label>🎵 TikTok Linki</label><input id="tiktokLink" value="${escapeHtml(socialLinks.tiktok)}"></div>
+                        <button id="saveTiktokBtn" class="save-btn" style="width:100%; margin-bottom:12px;">💾 TikTok Kaydet</button>
+                        <div class="form-group"><label>🌐 Web Site Linki</label><input id="websiteLink" value="${escapeHtml(socialLinks.website)}"></div>
+                        <button id="saveWebsiteBtn" class="save-btn" style="width:100%;">💾 Web Site Kaydet</button>
+                    </div>
+
+                    <div id="categoryPanel" class="settings-panel">
+                        <div class="form-group"><label>Yeni Kategori</label><input id="newCategoryName" placeholder="Kategori adı"></div>
+                        <button id="addCategoryBtn" class="btn-secondary" style="width:100%; margin-bottom:20px;">➕ Ekle</button>
+                        <label>Kategori Durumları (Aç/Kapat)</label>
+                        <div id="categoryStatusList" style="margin-top:10px;"></div>
+                    </div>
+
+                    <div id="dailyPanel" class="settings-panel">
+                        <h4>📅 Haftanın Günleri İçin Özel Menüler</h4>
+                        <p style="color:#aaa; font-size:0.8rem; margin-bottom:15px;">Birden fazla kategori seçebilirsiniz (Ctrl tuşu ile).</p>
+                        <div id="dailySpecialList" style="margin-top:15px;"></div>
+                    </div>
+
+                    <div id="specialPanel" class="settings-panel">
+                        <h4>🎨 Özel Gün Görseli</h4>
+                        <p style="color:#aaa; font-size:0.8rem; margin-bottom:15px;">Özel günlerde müşteri menüsünde gösterilecek tek görsel.</p>
+                        <div class="form-group">
+                            <label>Görsel URL</label>
+                            <input id="specialImageUrl" value="${specialDayImages.length > 0 ? escapeHtml(specialDayImages[0].image_url) : ''}" placeholder="https://...">
+                        </div>
+                        ${specialDayImages.length > 0 && specialDayImages[0].image_url ? `
+                            <div class="special-image-preview">
+                                <img src="${escapeHtml(specialDayImages[0].image_url)}" onerror="this.style.display='none'" alt="Özel gün görseli">
+                            </div>
+                        ` : ''}
+                        <button id="saveSpecialImageBtn" class="save-btn" style="width:100%; margin-bottom:10px;">💾 Görseli Kaydet</button>
+                        ${specialDayImages.length > 0 && specialDayImages[0].image_url ? `
+                            <button id="deleteSpecialImageBtn" class="btn-danger" style="width:100%; padding:10px; border-radius:30px; border:none; color:white; cursor:pointer;">🗑️ Görseli Sil</button>
+                        ` : ''}
+                    </div>
+
+                    <div id="hoursPanel" class="settings-panel">
+                        <h4>⏰ Çalışma Saatleri</h4>
+                        <p style="color:#aaa; font-size:0.8rem; margin-bottom:15px;">Kapalı günlerde saatler otomatik temizlenir.</p>
+                        <div id="storeHoursList" style="margin-top:15px;"></div>
+                    </div>
+
+                    <div id="logoutPanel" class="settings-panel">
+                        <button id="logoutBtn" class="btn-danger" style="width:100%; padding:14px; border-radius:34px; border:none; color:white; cursor:pointer;">🚪 Çıkış Yap</button>
+                    </div>
+
+                    <div class="modal-buttons"><button id="closeBtn" class="btn-secondary">Kapat</button></div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            const tabs = modal.querySelectorAll('.settings-tab');
+            const panels = { store: modal.querySelector('#storePanel'), social: modal.querySelector('#socialPanel'), category: modal.querySelector('#categoryPanel'), daily: modal.querySelector('#dailyPanel'), special: modal.querySelector('#specialPanel'), hours: modal.querySelector('#hoursPanel'), logout: modal.querySelector('#logoutPanel') };
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    Object.values(panels).forEach(p => p.classList.remove('active-panel'));
+                    panels[tab.dataset.tab].classList.add('active-panel');
+                });
+            });
+            tabs[0].classList.add('active');
+            panels.store.classList.add('active-panel');
+
+            modal.querySelector('#saveStoreBtn').onclick = () => {
+                storeSettings.name = modal.querySelector('#storeNameInput').value;
+                storeSettings.logoUrl = modal.querySelector('#logoUrlInput').value;
+                saveStoreSettings();
+            };
+
+            modal.querySelector('#saveInstagramBtn').onclick = () => {
+                saveSocialLink('instagram', modal.querySelector('#instagramLink').value);
+            };
+            modal.querySelector('#saveTiktokBtn').onclick = () => {
+                saveSocialLink('tiktok', modal.querySelector('#tiktokLink').value);
+            };
+            modal.querySelector('#saveWebsiteBtn').onclick = () => {
+                saveSocialLink('website', modal.querySelector('#websiteLink').value);
+            };
+
+            modal.querySelector('#changePassBtn').onclick = () => {
+                let passModal = document.createElement('div');
+                passModal.className = 'modal';
+                passModal.innerHTML = `
+                    <div class="modal-content">
+                        <h3>🔐 Şifre Değiştir</h3>
+                        <div class="form-group"><label>Eski Şifre</label><input id="oldPass" type="password"></div>
+                        <div class="form-group"><label>Yeni Şifre</label><input id="newPass1" type="password"></div>
+                        <div class="form-group"><label>Tekrar</label><input id="newPass2" type="password"></div>
+                        <div class="modal-buttons">
+                            <button id="cancelBtn" style="background:#2a2a2a; padding:10px 20px; border-radius:30px;">İptal</button>
+                            <button id="saveBtn" style="background:#6b0c1b; padding:10px 20px; border-radius:30px;">Değiştir</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(passModal);
+                document.getElementById('cancelBtn').onclick = () => passModal.remove();
+                document.getElementById('saveBtn').onclick = async () => {
+                    const old = document.getElementById('oldPass').value;
+                    const new1 = document.getElementById('newPass1').value;
+                    const new2 = document.getElementById('newPass2').value;
+                    
+                    if (old !== adminPassword) { showToast("Eski şifre hatalı"); return; }
+                    if (!new1) { showToast("Yeni şifre boş olamaz"); return; }
+                    if (new1 !== new2) { showToast("Şifreler uyuşmuyor"); return; }
+                    
+                    const { error } = await supabase
+                        .from('admin_settings')
+                        .update({ setting_value: new1, updated_at: new Date() })
+                        .eq('setting_key', 'admin_password');
+                    
+                    if (error) { showToast("❌ Şifre kaydedilemedi: " + error.message); return; }
+                    
+                    adminPassword = new1;
+                    showToast("✅ Şifre değiştirildi! Yeniden giriş yapın.");
+                    setTimeout(() => {
+                        localStorage.removeItem('admin_auth');
+                        passModal.remove();
+                        checkAuth();
+                    }, 1500);
+                };
+            };
+
+            modal.querySelector('#saveSpecialImageBtn').onclick = async () => {
+                const url = modal.querySelector('#specialImageUrl').value.trim();
+                if (!url) { showToast("Görsel URL girin"); return; }
+                await saveSpecialDayImage(url);
+                await refreshSpecialImageUI();
+                showToast("✅ Özel gün görseli kaydedildi");
+            };
+            modal.querySelector('#deleteSpecialImageBtn').onclick = async () => {
+                showConfirmModal("🗑️ Görsel Sil", "Özel gün görselini silmek istediğinize emin misiniz?", async () => {
+                    await deleteSpecialDayImage();
+                    await refreshSpecialImageUI();
+                });
+            };
+
+            const refreshSpecialImageUI = async () => {
+                await loadSpecialDayImages();
+                const container = modal.querySelector('#specialPanel');
+                const url = specialDayImages.length > 0 ? specialDayImages[0].image_url : '';
+                const input = modal.querySelector('#specialImageUrl');
+                if (input) input.value = url || '';
+                const preview = container.querySelector('.special-image-preview');
+                if (preview) {
+                    const img = preview.querySelector('img');
+                    if (img && url) {
+                        img.src = url;
+                        img.style.display = 'block';
+                    } else if (preview) {
+                        preview.style.display = 'none';
+                    }
+                }
+                const deleteBtn = container.querySelector('#deleteSpecialImageBtn');
+                if (deleteBtn) {
+                    deleteBtn.style.display = url ? 'block' : 'none';
+                }
+            };
+
+            // Kategori Durumları
+            const refreshCategoryStatus = async () => {
+                await loadCategoryStatus();
+                let container = modal.querySelector('#categoryStatusList');
+                if (!categoryStatus.length) { container.innerHTML = '<span style="color:#777;">Henüz kategori yok</span>'; return; }
+                container.innerHTML = categoryStatus.map(s => {
+                    const isClosedToday = s.is_closed_today || false;
+                    const isActive = s.is_active || false;
+                    return `
+                    <div class="category-item">
+                        <span class="name">${escapeHtml(s.category_name)} ${isClosedToday ? '<span class="closed-badge">Bugün Kapalı</span>' : ''}</span>
+                        <div class="actions">
+                            <label class="toggle-switch">
+                                <input type="checkbox" ${isActive ? 'checked' : ''} onchange="window.toggleCategory('${escapeHtml(s.category_name)}', this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span style="font-size:0.7rem; color:${isActive ? '#4caf50' : '#ff8888'};">${isActive ? 'Aktif' : 'Kapalı'}</span>
+                            ${isActive && !isClosedToday ? `<button onclick="window.closeCategoryToday('${escapeHtml(s.category_name)}')" class="btn-secondary btn-warning" style="padding:4px 12px; font-size:0.7rem;">📅 Bugünlük Kapat</button>` : ''}
+                            ${isActive && isClosedToday ? `<button onclick="window.openCategoryToday('${escapeHtml(s.category_name)}')" class="btn-secondary btn-success" style="padding:4px 12px; font-size:0.7rem;">✅ Bugün Aç</button>` : ''}
+                            ${!isActive ? `<button onclick="window.openCategoryToday('${escapeHtml(s.category_name)}')" class="btn-secondary btn-success" style="padding:4px 12px; font-size:0.7rem;">✅ Bugün Aç</button>` : ''}
+                            <button onclick="window.deleteCategory('${escapeHtml(s.category_name)}')" class="btn-danger" style="padding:4px 12px; border-radius:30px; border:none; color:white; cursor:pointer; font-size:0.7rem;">🗑️ Sil</button>
+                        </div>
+                    </div>`;
+                }).join('');
+            };
+            refreshCategoryStatus();
+
+            window.toggleCategory = async (name, isActive) => {
+                await updateCategoryStatus(name, isActive);
+                await refreshCategoryStatus();
+            };
+            window.closeCategoryToday = async (name) => {
+                showConfirmModal("📅 Bugünlük Kapat", `"${name}" kategorisini bugünlük kapatmak istediğinize emin misiniz?`, async () => {
+                    await closeCategoryToday(name);
+                    await refreshCategoryStatus();
+                });
+            };
+            window.openCategoryToday = async (name) => {
+                await openCategoryToday(name);
+                await refreshCategoryStatus();
+            };
+            window.deleteCategory = async (name) => {
+                showConfirmModal("🗑️ Kategori Silme", `"${name}" kategorisini silmek istediğinize emin misiniz?`, async () => {
+                    await deleteCategory(name);
+                    await refreshCategoryStatus();
+                });
+            };
+
+            modal.querySelector('#addCategoryBtn').onclick = async () => {
+                let newCat = modal.querySelector('#newCategoryName').value.trim();
+                if (!newCat) { showToast("Kategori adı girin"); return; }
+                if (categories.includes(newCat)) { showToast("Bu kategori zaten var"); return; }
+                await addCategory(newCat);
+                await refreshCategoryStatus();
+                modal.querySelector('#newCategoryName').value = '';
+            };
+
+            // Özel Günler
+            const refreshDailySpecials = async () => {
+                await loadDailySpecials();
+                let container = modal.querySelector('#dailySpecialList');
+                const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+                let html = '';
+                days.forEach((day, index) => {
+                    let specials = dailySpecials.filter(s => s.day_of_week === index);
+                    let selectedCats = specials.map(s => s.category_name);
+                    html += `
+                        <div style="display:flex; flex-direction:column; gap:8px; padding:12px 0; border-bottom:1px solid #1a1a1a;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                                <span style="font-weight:600; min-width:80px;">${day}</span>
+                                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                                    <button onclick="window.saveDailySpecial(${index})" class="save-btn">💾 Kaydet</button>
+                                    ${selectedCats.length > 0 ? `<button onclick="window.removeDailySpecial(${index})" class="btn-danger" style="padding:6px 14px; border-radius:30px; border:none; color:white; cursor:pointer;">✖ Kaldır</button>` : ''}
+                                    ${selectedCats.length > 0 ? `<span style="font-size:0.7rem; color:#4caf50;">✓ ${selectedCats.length} seçili</span>` : ''}
+                                </div>
+                            </div>
+                            <select multiple class="multi-select" id="dailySelect_${index}" style="min-height:60px;">
+                                ${categories.map(c => `<option value="${escapeHtml(c)}" ${selectedCats.includes(c) ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
+                            </select>
+                            ${selectedCats.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;">${selectedCats.map(c => `<span class="category-tag" style="background:#6b0c1b;">${escapeHtml(c)} ⭐</span>`).join('')}</div>` : ''}
+                            <div style="font-size:0.65rem; color:#666;">💡 Birden fazla seçmek için Ctrl tuşuna basılı tutun</div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            };
+            refreshDailySpecials();
+
+            window.saveDailySpecial = async (day) => {
+                let select = document.getElementById(`dailySelect_${day}`);
+                let selected = Array.from(select.selectedOptions).map(opt => opt.value);
+                if (!selected.length) { showToast("En az bir kategori seçin"); return; }
+                await saveDailySpecial(day, selected);
+                await refreshDailySpecials();
+            };
+            window.removeDailySpecial = async (day) => {
+                showConfirmModal("Özel Menü Kaldır", "Bu günün tüm özel menülerini kaldırmak istediğinize emin misiniz?", async () => {
+                    await removeDailySpecial(day);
+                    await refreshDailySpecials();
+                });
+            };
+
+            async function loadDailySpecials() {
+                try {
+                    const { data } = await supabase.from('daily_special').select('*').eq('is_active', true).order('priority', { ascending: false });
+                    dailySpecials = data || [];
+                } catch(e) {}
+            }
+
+            async function saveDailySpecial(day, categories) {
+                try {
+                    await supabase.from('daily_special').delete().eq('day_of_week', day);
+                    for (let i = 0; i < categories.length; i++) {
+                        await supabase.from('daily_special').insert({ day_of_week: day, category_name: categories[i], priority: categories.length - i, is_active: true, updated_at: new Date() });
+                    }
+                    await loadDailySpecials();
+                    showToast(`✅ ${getDayName(day)} için ${categories.length} özel kategori ayarlandı`);
+                } catch(e) { showToast("❌ Kaydedilemedi: " + e.message); }
+            }
+
+            async function removeDailySpecial(day) {
+                try {
+                    await supabase.from('daily_special').delete().eq('day_of_week', day);
+                    await loadDailySpecials();
+                    showToast(`✅ Özel menü kaldırıldı`);
+                } catch(e) { showToast("❌ Kaldırılamadı"); }
+            }
+
+            // Çalışma Saatleri
+            const refreshStoreHours = async () => {
+                await loadStoreHours();
+                let container = modal.querySelector('#storeHoursList');
+                const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+                let html = '';
+                days.forEach((day, index) => {
+                    let hours = storeHours.find(h => h.day_of_week === index);
+                    let openTime = hours && hours.open_time ? hours.open_time : '';
+                    let closeTime = hours && hours.close_time ? hours.close_time : '';
+                    let isClosed = hours ? hours.is_closed : true;
+                    html += `
+                        <div class="hours-item">
+                            <span class="day">${day}</span>
+                            <div class="controls">
+                                <div class="time-input">
+                                    <input type="time" id="openTime_${index}" value="${openTime}" ${isClosed ? 'disabled' : ''}>
+                                    <span>-</span>
+                                    <input type="time" id="closeTime_${index}" value="${closeTime}" ${isClosed ? 'disabled' : ''}>
+                                </div>
+                                <button onclick="window.saveStoreHours(${index})" class="save-btn">💾 Kaydet</button>
+                                <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:#aaa; cursor:pointer;">
+                                    <input type="checkbox" id="closedCheck_${index}" ${isClosed ? 'checked' : ''} onchange="window.toggleClosed(${index})"> Bugün Kapalı
+                                </label>
+                                ${isClosed ? '<span style="font-size:0.7rem; color:#ff8888;">🔴 Kapalı</span>' : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+
+                document.querySelectorAll('[id^="closedCheck_"]').forEach(cb => {
+                    cb.addEventListener('change', function() {
+                        const index = this.id.replace('closedCheck_', '');
+                        const openInput = document.getElementById(`openTime_${index}`);
+                        const closeInput = document.getElementById(`closeTime_${index}`);
+                        if (this.checked) {
+                            openInput.disabled = true;
+                            closeInput.disabled = true;
+                            openInput.value = '';
+                            closeInput.value = '';
+                            saveStoreHours(parseInt(index), null, null, true);
+                        } else {
+                            openInput.disabled = false;
+                            closeInput.disabled = false;
+                            saveStoreHours(parseInt(index), '', '', false);
+                        }
+                    });
+                });
+            };
+            refreshStoreHours();
+
+            window.saveStoreHours = async (day) => {
+                let openTime = document.getElementById(`openTime_${day}`).value;
+                let closeTime = document.getElementById(`closeTime_${day}`).value;
+                let isClosed = document.getElementById(`closedCheck_${day}`).checked;
+                if (!isClosed && (!openTime || !closeTime)) { showToast("⚠️ Açık günler için saat girin!"); return; }
+                await saveStoreHours(day, openTime, closeTime, isClosed);
+                await refreshStoreHours();
+            };
+            window.toggleClosed = async (day) => {
+                const checkbox = document.getElementById(`closedCheck_${day}`);
+                const isChecked = checkbox.checked;
+                if (isChecked) {
+                    await saveStoreHours(day, null, null, true);
+                } else {
+                    await saveStoreHours(day, '', '', false);
+                }
+                await refreshStoreHours();
+            };
+
+            modal.querySelector('#logoutBtn').onclick = () => {
+                showConfirmModal("Çıkış Yap", "Oturumunuzu kapatmak istediğinize emin misiniz?", () => {
+                    localStorage.removeItem('admin_auth');
+                    modal.remove();
+                    const passInput = document.getElementById('authPassword');
+                    if (passInput) passInput.value = '';
+                    checkAuth();
+                    showToast("Çıkış yapıldı");
+                });
+            };
+            modal.querySelector('#closeBtn').onclick = () => modal.remove();
+        }
+
+        function checkAuth() {
+            if (localStorage.getItem('admin_auth') === 'true') {
+                document.getElementById('authContainer').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                loadAdminPassword().then(() => {
+                    loadStoreSettings();
+                    loadSocialLinks();
+                    loadCategories();
+                    loadStoreHours();
+                    loadProducts();
+                    loadSpecialDayImages();
+                    resetLogoutTimer();
+                });
+            } else {
+                document.getElementById('authContainer').style.display = 'flex';
+                document.getElementById('adminPanel').style.display = 'none';
+                if (logoutTimer) clearTimeout(logoutTimer);
+            }
+        }
+
+        document.getElementById('authBtn').onclick = async () => {
+            const entered = document.getElementById('authPassword').value;
+            await loadAdminPassword();
+            
+            if (entered === adminPassword) {
+                localStorage.setItem('admin_auth', 'true');
+                document.getElementById('authPassword').value = '';
+                showToast("✅ Giriş başarılı!");
+                setTimeout(() => checkAuth(), 800);
+            } else {
+                document.getElementById('authError').innerText = "❌ Hatalı şifre!";
+                document.getElementById('authPassword').value = '';
+            }
+        };
+
+        document.getElementById('settingsBtn').onclick = openSettingsModal;
+
+        checkAuth();
+    })();
+</script>
+</body>
+</html>
